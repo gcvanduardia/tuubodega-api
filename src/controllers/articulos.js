@@ -19,28 +19,56 @@ exports.search = async (req, res) => {
     const search = req.body.search || req.query.search;
     const pageNumber = req.body.pageNumber || req.query.pageNumber || 1;
     const pageSize = req.body.pageSize || req.query.pageSize || 12;
-    const request = new sql.Request();
+    const order = req.body.order || req.query.order || 'masRelevante';
 
+    const request = new sql.Request();
+    let sql_searchInfo = '';
     let sql_str = '';
     if(search == undefined || search == ''){
+        if(pageNumber == 1){
+            sql_searchInfo = `
+            SELECT Resultados = COUNT(Id), PageZise = ${pageSize}
+            FROM vw_EncArticulos`;
+        }
         sql_str = `
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
             ORDER BY Id
             OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
-            FETCH NEXT ${pageSize} ROWS ONLY;`;
+            FETCH NEXT ${pageSize} ROWS ONLY;
+            
+            ${sql_searchInfo}`;
     }else{
+        if(pageNumber == 1){
+            sql_searchInfo = `
+            SELECT Resultados = COUNT(Id), PageZise = ${pageSize}
+            FROM vw_EncArticulos
+            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'`;
+        }
+        let sqlOrder = '';
+        switch (order) {
+            case 'masRelevante':
+                sqlOrder = `ORDER BY CHARINDEX('${search}', clave COLLATE Latin1_General_CI_AI), nombre`;
+                break;
+            case 'menorPrecio':
+                sqlOrder = `ORDER BY PrecioUnit ASC`;
+                break;
+            case 'mayorPrecio':
+                sqlOrder = `ORDER BY PrecioUnit DESC`;
+                break;
+            default:
+                sqlOrder = `ORDER BY Id`;
+                break;
+        }
         sql_str = `
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
             WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
-            ORDER BY CHARINDEX('${search}', clave COLLATE Latin1_General_CI_AI), nombre
+            ${sqlOrder}
             OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
             FETCH NEXT ${pageSize} ROWS ONLY;
             
-            SELECT Resultados = COUNT(Id)
-            FROM vw_EncArticulos
-            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'`;
+            ${sql_searchInfo}`;
     }
     console.log('Articulos search: ',sql_str);
     request.query(sql_str)

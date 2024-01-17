@@ -24,9 +24,6 @@ exports.search = async (req, res) => {
     let sql_str = '';
     if(search == undefined || search == ''){
         sql_str = `
-            SELECT Resultados=COUNT(Id)
-            FROM vw_EncArticulos
-    
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
             ORDER BY Id
@@ -34,16 +31,16 @@ exports.search = async (req, res) => {
             FETCH NEXT ${pageSize} ROWS ONLY;`;
     }else{
         sql_str = `
-            SELECT Resultados = COUNT(Id)
-            FROM vw_EncArticulos
-            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
-    
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
             WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
             ORDER BY CHARINDEX('${search}', clave COLLATE Latin1_General_CI_AI), nombre
             OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
-            FETCH NEXT ${pageSize} ROWS ONLY;`;
+            FETCH NEXT ${pageSize} ROWS ONLY;
+            
+            SELECT Resultados = COUNT(Id)
+            FROM vw_EncArticulos
+            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'`;
     }
     console.log('Articulos search: ',sql_str);
     request.query(sql_str)

@@ -10,4 +10,8 @@ router.route('/search')
     .post(articulosController.search)
     .get(articulosController.search)
 
+router.route('/articulo')
+    .post(articulosController.article)
+    .get(articulosController.article)
+
 module.exports = router;

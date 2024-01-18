@@ -80,3 +80,17 @@ exports.search = async (req, res) => {
             res.status(500).send({ Error: true, Message: err });
         });
 }
+
+exports.article = async (req, res) => {
+    const id = req.body.id || req.query.id;
+    const request = new sql.Request();
+    sql_str = ` SELECT * FROM vw_DetArticulo WHERE Id = ${id}`;
+    request.query(sql_str)
+        .then((object) => {
+            res.status(200).json(object.recordset[0]);
+        })
+        .catch((err) => {
+            console.log('Articulos article: ',err);
+            res.status(500).send({ Error: true, Message: err });
+        });
+}

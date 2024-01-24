@@ -12,7 +12,9 @@ const verificarApiKey = async (req, res, next) => {
     if (verifApiKeyDBresponse) {
         next();
     } else {
-        res.status(400).json({ error: 'No tiene autorización' });
+        res.status(400).json({ 
+            Error: true,
+            Message: 'No tiene autorización' });
     }
 };
 

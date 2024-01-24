@@ -2,6 +2,16 @@ const jwt = require('jsonwebtoken');
 const sql = require("mssql");
 const hash = require('../utils/hash');
 
+exports.hashService = async (req, res) => {
+    const { data } = req.body;
+    const hashData = await hash.hashPassword(data);
+    res.status(200).json({
+        Error: false,
+        Message: 'Hash generado correctamente',
+        Hash: hashData
+    });
+}
+
 exports.login = async (req, res) => {
     const { username, password } = req.body;
     const request = new sql.Request();

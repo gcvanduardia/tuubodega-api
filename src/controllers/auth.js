@@ -2,6 +2,13 @@ const jwt = require('jsonwebtoken');
 const sql = require("mssql");
 const hash = require('../utils/hash');
 
+exports.sesion = async (req, res) => {
+    res.status(200).json({
+        Error: false,
+        Message: 'Sesión activa'
+    });
+}
+
 exports.hashService = async (req, res) => {
     const { data } = req.body;
     const hashData = await hash.hashPassword(data);

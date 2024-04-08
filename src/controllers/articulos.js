@@ -84,20 +84,54 @@ exports.search = async (req, res) => {
     const pageNumber = req.body.pageNumber || req.query.pageNumber || 1;
     const pageSize = req.body.pageSize || req.query.pageSize || 12;
     const order = req.body.order || req.query.order || 'masRelevante';
+    const categories = req.body.categories || req.query.categories;
 
     const request = new sql.Request();
     let sql_searchInfo = '';
     let sql_str = '';
+    let sqlOrder = '';
+    let sqlCategories1 = '';
+    let sqlCategories2 = '';
+    if(categories != undefined && categories != ''){
+        sqlCategories1 = `AND IdCategoria IN (${categories})`;
+        sqlCategories2 = `WHERE IdCategoria IN (${categories})`;
+    }
+    switch (order) {
+        case 'masRelevante':
+            if(search == undefined || search == ''){
+                sqlOrder = `ORDER BY Id DESC`;
+            } else {    
+                sqlOrder = `ORDER BY CHARINDEX('${search}', clave COLLATE Latin1_General_CI_AI), nombre`;
+            }
+            break;
+        case 'menorPrecio':
+            sqlOrder = `ORDER BY PrecioUnit ASC`;
+            break;
+        case 'mayorPrecio':
+            sqlOrder = `ORDER BY PrecioUnit DESC`;
+            break;
+        default:
+            sqlOrder = `ORDER BY Id DESC`;
+            break;
+    }
     if(search == undefined || search == ''){
         if(pageNumber == 1){
             sql_searchInfo = `
             SELECT Resultados = COUNT(Id), PageZise = ${pageSize}
-            FROM vw_EncArticulos`;
+            FROM vw_EncArticulos
+            ${sqlCategories2}
+            
+            SELECT a.IdCategoria, c.Nombre
+            FROM vw_EncArticulos a
+            INNER JOIN CategoriasArticulos c ON a.IdCategoria = c.Id
+            GROUP BY a.IdCategoria, c.Nombre;
+            `;
         }
         sql_str = `
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
-            ORDER BY Id DESC
+            ${sqlCategories2}
+            ${sqlOrder}
             OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
             FETCH NEXT ${pageSize} ROWS ONLY;
             
@@ -107,27 +141,19 @@ exports.search = async (req, res) => {
             sql_searchInfo = `
             SELECT Resultados = COUNT(Id), PageZise = ${pageSize}
             FROM vw_EncArticulos
-            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'`;
-        }
-        let sqlOrder = '';
-        switch (order) {
-            case 'masRelevante':
-                sqlOrder = `ORDER BY CHARINDEX('${search}', clave COLLATE Latin1_General_CI_AI), nombre`;
-                break;
-            case 'menorPrecio':
-                sqlOrder = `ORDER BY PrecioUnit ASC`;
-                break;
-            case 'mayorPrecio':
-                sqlOrder = `ORDER BY PrecioUnit DESC`;
-                break;
-            default:
-                sqlOrder = `ORDER BY Id DESC`;
-                break;
+            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
+            ${sqlCategories1}
+            
+            SELECT a.IdCategoria, c.Nombre
+            FROM vw_EncArticulos a
+            INNER JOIN CategoriasArticulos c ON a.IdCategoria = c.Id
+            WHERE a.clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
+            GROUP BY a.IdCategoria, c.Nombre`;
         }
         sql_str = `
             SELECT Id, Nombre, PrecioUnit, ImagenPrin
             FROM vw_EncArticulos
-            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%'
+            WHERE clave COLLATE Latin1_General_CI_AI LIKE '%${search}%' ${sqlCategories1}
             ${sqlOrder}
             OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
             FETCH NEXT ${pageSize} ROWS ONLY;

@@ -6,6 +6,11 @@ const auth = require("../middleware/jwt");
 router.route("/all").get(articulosController.all);
 
 router
+  .route("/presearch")
+  .post(articulosController.presearch)
+  .get(articulosController.presearch);
+
+  router
   .route("/search")
   .post(articulosController.search)
   .get(articulosController.search);

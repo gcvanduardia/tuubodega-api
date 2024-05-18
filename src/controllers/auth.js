@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const sql = require("mssql");
 const hash = require('../utils/hash');
+const sendMail = require('../services/email');
 
 exports.sesion = async (req, res) => {
     res.status(200).json({
@@ -22,7 +23,7 @@ exports.hashService = async (req, res) => {
 exports.login = async (req, res) => {
     const { username, password } = req.body;
     const request = new sql.Request();
-    sql_str = `SELECT Pass, Documento FROM UsersLogin WHERE En=1 AND (Documento='${username}' OR Email='${username}' OR Phone='${username}')`;
+    sql_str = `SELECT Pass, Documento, Email FROM UsersLogin WHERE En=1 AND (Documento='${username}' OR Email='${username}' OR Phone='${username}')`;
     request.query(sql_str)
         .then((object) => {
             verifLogin(object.recordset[0],res,username,password);
@@ -41,7 +42,7 @@ async function verifLogin(resSql,resApi,username,password){
         });
     }else{
         if(await hash.comparePassword(password, resSql.Pass)){
-            const token = jwt.sign({ username: resSql.username }, process.env.JWT_SECRET, { expiresIn: '5d' });
+            const token = jwt.sign({ email: resSql.Email }, process.env.JWT_SECRET, { expiresIn: '5d' });
             const updateLoginResponse = await updateLogin(username);
             if(updateLoginResponse.Error){
                 console.log('updateLoginResponse: ',updateLoginResponse);
@@ -51,6 +52,7 @@ async function verifLogin(resSql,resApi,username,password){
                     UpdateLoginResponse: updateLoginResponse
                 });
             }else{
+                sendMail(resSql.Email,'Inicio de sesión en TuuBodega','Se ha iniciado sesión en su cuenta.');
                 resApi.status(200).json({
                     Error: false,
                     Message: 'Login correcto',

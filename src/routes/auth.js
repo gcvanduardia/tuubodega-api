@@ -3,9 +3,9 @@ const router = express.Router();
 const authController = require('../controllers/auth');
 const auth = require('../middleware/jwt');
 
-router.post('/hash', authController.hashService);
-router.post('/login', authController.login);
-router.route('/sesion').get(auth,authController.sesion);
+router.route('/hash').post(authController.hashService);
+router.route('/loginAdmin').post(authController.loginAdmin);
+router.route('/sesion').get(authController.sesion);
 
 
 module.exports = router;

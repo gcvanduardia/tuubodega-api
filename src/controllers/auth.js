@@ -1,13 +1,23 @@
-const jwt = require('jsonwebtoken');
 const sql = require("mssql");
 const hash = require('../utils/hash');
 const sendMail = require('../services/email');
+const { generateToken, verifyToken } = require('../services/jwt');
+const req = require('express/lib/request');
 
 exports.sesion = async (req, res) => {
-    res.status(200).json({
-        Error: false,
-        Message: 'Sesión activa'
-    });
+    const token = req.headers['authorization'];
+
+    const decoded = verifyToken(token);
+    if (decoded) {
+        res.status(200).json({ 
+            message: 'Token is valid', 
+            data: decoded 
+        });
+    } else {
+        res.status(401).json({ 
+            message: 'Token is not valid'
+        });
+    }
 }
 
 exports.hashService = async (req, res) => {
@@ -20,21 +30,22 @@ exports.hashService = async (req, res) => {
     });
 }
 
-exports.login = async (req, res) => {
+exports.loginAdmin = async (req, res) => {
     const { username, password } = req.body;
     const request = new sql.Request();
-    sql_str = `SELECT Pass, Documento, Email FROM UsersLogin WHERE En=1 AND (Documento='${username}' OR Email='${username}' OR Phone='${username}')`;
+    request.input('username', sql.NVarChar, username);
+    const sql_str = `SELECT * FROM UsersAdmin WHERE En=1 AND (Documento=@username OR Email=@username OR Phone=@username)`;
     request.query(sql_str)
         .then((object) => {
-            verifLogin(object.recordset[0],res,username,password);
+            verifLoginAdmin(object.recordset[0],res,password);
         })
         .catch((err) => {
             console.log('login: ',err);
         });
 };
 
-async function verifLogin(resSql,resApi,username,password){
-    console.log('verifLogin: ',resSql);
+async function verifLoginAdmin(resSql,resApi,password){
+    console.log('verifLoginAdmin: ',resSql);
     if(!resSql){
         resApi.status(401).send({ 
             Error: true, 
@@ -42,22 +53,20 @@ async function verifLogin(resSql,resApi,username,password){
         });
     }else{
         if(await hash.comparePassword(password, resSql.Pass)){
-            const token = jwt.sign({ email: resSql.Email }, process.env.JWT_SECRET, { expiresIn: '5d' });
-            const updateLoginResponse = await updateLogin(username);
-            if(updateLoginResponse.Error){
-                console.log('updateLoginResponse: ',updateLoginResponse);
+            const updateLoginAdminResponse = await updateLoginAdmin(resSql.IdUser);
+            if(updateLoginAdminResponse.Error){
+                console.log('updateLoginAdminResponse: ',updateLoginAdminResponse);
                 resApi.status(401).send({
                     Error: true,
                     Message: 'Error al actualizar el login',
-                    UpdateLoginResponse: updateLoginResponse
+                    UpdateLoginAdminResponse: updateLoginAdminResponse
                 });
             }else{
+                const token = generateToken(resSql.IdUser);
                 sendMail(resSql.Email,'Inicio de sesión en TuuBodega','Se ha iniciado sesión en su cuenta.');
                 resApi.status(200).json({
-                    Error: false,
                     Message: 'Login correcto',
-                    Token: token,
-                    Documento: resSql.Documento
+                    Token: token
                 });
             }
         }else{
@@ -68,10 +77,11 @@ async function verifLogin(resSql,resApi,username,password){
     }
 }
 
-async function updateLogin(username){
+async function updateLoginAdmin(IdUser){
     let response;
     const request = new sql.Request();
-    sql_str = `UPDATE UsersLogin SET UpdateDate=GETDATE() WHERE Documento='${username}' OR Email='${username}' OR Phone='${username}'`;
+    request.input('IdUser', sql.Int, IdUser);
+    sql_str = `UPDATE UsersAdmin SET LastLogin=GETDATE() WHERE IdUser=@IdUser`;
     await request.query(sql_str)
         .then((object) => {
             response = { 
@@ -85,6 +95,6 @@ async function updateLogin(username){
                 Message: err
             }
         });
-    console.log('updateLogin: ',response);
+    console.log('updateLoginAdmin: ',response);
     return response;
 }

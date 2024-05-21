@@ -30,6 +30,75 @@ exports.hashService = async (req, res) => {
     });
 }
 
+exports.login = async (req, res) => {
+    const { username, password } = req.body;
+    const request = new sql.Request();
+    request.input('username', sql.NVarChar, username);
+    const sql_str = `SELECT * FROM Users WHERE En=1 AND (Documento=@username OR Email=@username OR Phone=@username)`;
+    request.query(sql_str)
+        .then((object) => {
+            verifLogin(object.recordset[0],res,password);
+        })
+        .catch((err) => {
+            console.log('login: ',err);
+        });
+};
+
+async function verifLogin(resSql,resApi,password){
+    console.log('verifLogin: ',resSql);
+    if(!resSql){
+        resApi.status(401).send({ 
+            Error: true, 
+            Message: 'Usuario no encontrado' 
+        });
+    }else{
+        if(await hash.comparePassword(password, resSql.Pass)){
+            const updateLoginResponse = await updateLogin(resSql.IdUser);
+            if(updateLoginResponse.Error){
+                console.log('updateLoginResponse: ',updateLoginResponse);
+                resApi.status(401).send({
+                    Error: true,
+                    Message: 'Error al actualizar el login',
+                    UpdateLoginResponse: updateLoginResponse
+                });
+            }else{
+                const token = generateToken(resSql.IdUser);
+                sendMail(resSql.Email,'Inicio de sesión en TuuBodega','Se ha iniciado sesión en su cuenta.');
+                resApi.status(200).json({
+                    Message: 'Login correcto',
+                    Token: token
+                });
+            }
+        }else{
+            resApi.status(401).send({ 
+                Error: true, 
+                Message: 'Contraseña incorrecta' });
+        }
+    }
+}
+
+async function updateLogin(IdUser){
+    let response;
+    const request = new sql.Request();
+    request.input('IdUser', sql.Int, IdUser);
+    sql_str = `UPDATE Users SET LastLogin=GETDATE() WHERE IdUser=@IdUser`;
+    await request.query(sql_str)
+        .then((object) => {
+            response = { 
+                Error: false,
+                Message: 'Login actualizado correctamente'
+            }
+        })
+        .catch((err) => {
+            response = { 
+                Error: true,
+                Message: err
+            }
+        });
+    console.log('updateLoginAdmin: ',response);
+    return response;
+}
+
 exports.loginAdmin = async (req, res) => {
     const { username, password } = req.body;
     const request = new sql.Request();
@@ -63,7 +132,7 @@ async function verifLoginAdmin(resSql,resApi,password){
                 });
             }else{
                 const token = generateToken(resSql.IdUser);
-                sendMail(resSql.Email,'Inicio de sesión en TuuBodega','Se ha iniciado sesión en su cuenta.');
+                sendMail(resSql.Email,'Inicio de sesión en TuuBodega','Se ha iniciado sesión en su cuenta admin.');
                 resApi.status(200).json({
                     Message: 'Login correcto',
                     Token: token

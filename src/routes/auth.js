@@ -5,6 +5,7 @@ const auth = require('../middleware/jwt');
 
 router.route('/hash').post(authController.hashService);
 router.route('/loginAdmin').post(authController.loginAdmin);
+router.route('/login').post(authController.login);
 router.route('/sesion').get(authController.sesion);
 
 

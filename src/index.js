@@ -10,7 +10,8 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(apiKeyVerify);
 
-
+const usersRouter = require('./routes/users');
+app.use('/users',usersRouter);
 
 const greetingRouter = require('./routes/greeting');
 app.use('/greeting',greetingRouter);

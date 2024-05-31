@@ -8,6 +8,10 @@ const apiKeyVerify = require('./middleware/apiKey');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+const wompiEventsRouter = require('./routes/wompiEvents');
+app.use('/wompi',wompiEventsRouter);
+
 app.use(apiKeyVerify);
 
 const usersRouter = require('./routes/users');
@@ -21,6 +25,9 @@ app.use('/auth',authRouter);
 
 const articulosRouter = require('./routes/articulos');
 app.use('/articulos',articulosRouter);
+
+const paymentsRouter = require('./routes/payments');
+app.use('/payments',paymentsRouter);
 
 
 

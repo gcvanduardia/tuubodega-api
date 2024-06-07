@@ -15,7 +15,7 @@ exports.updateTransaction = async (req, res) => {
         amount_in_cents, 
         reference, 
         currency, 
-        payment_method_type, 
+        payment_method_type,
         status
     } = req.body.data.transaction;
 

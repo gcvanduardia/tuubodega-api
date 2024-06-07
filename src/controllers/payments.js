@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { generateIntegritySignature } = require('../services/wompi');
+const { generateIntegritySignature, generateReference } = require('../services/wompi');
 
 exports.integritySignature = async (req, res) => {
     const id = req.query.id;
@@ -11,16 +11,18 @@ exports.integritySignature = async (req, res) => {
     request.query(sql_str)
         .then((object) => {
 
+            const reference = generateReference(16);
+
             const product = object.recordset[0]
             const monto = (product.PrecioUnit * cantidad) * 100 
-            const cadena = product.Cod + monto + 'COP'
+            const cadena = reference + monto + 'COP'
             const integritySignature = generateIntegritySignature(cadena);
 
             res.status(200).json({
                 publicKey:process.env.WOMPI_PUBLIC_KEY,
                 currency: 'COP',
                 amountInCents: monto,
-                reference: product.Cod,
+                reference: reference,
                 integritySignature: integritySignature
             });
 

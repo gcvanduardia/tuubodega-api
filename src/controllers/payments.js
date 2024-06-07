@@ -14,7 +14,7 @@ exports.integritySignature = async (req, res) => {
             const reference = generateReference(16);
 
             const product = object.recordset[0]
-            const monto = (product.PrecioUnit * cantidad) * 100 
+            const monto = (Math.round(product.PrecioUnit) * cantidad) * 100 
             const cadena = reference + monto + 'COP'
             const integritySignature = generateIntegritySignature(cadena);
 

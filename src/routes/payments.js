@@ -4,6 +4,6 @@ const paymentsController = require("../controllers/payments");
 const auth = require("../middleware/jwt");
 
 router.route("/articulo/integrity-signature").get(paymentsController.integritySignature);
-router.route("/records").get(paymentsController.recordsList);
+router.route("/records").get(auth,paymentsController.recordsList);
 
 module.exports = router;

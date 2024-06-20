@@ -32,3 +32,18 @@ exports.integritySignature = async (req, res) => {
             res.status(500).send({ Error: true, Message: err });
         });
 }
+
+exports.recordsList = async (req, res) => {
+
+    const request = new sql.Request();
+    sql_str = ` SELECT * FROM PaymentsTransactions`;
+
+    request.query(sql_str)
+        .then((object) => {
+            res.status(200).json(object.recordset);
+        })
+        .catch((err) => {
+            console.log('Payments records: ',err);
+            res.status(500).send({ Error: true, Message: err });
+        });
+}

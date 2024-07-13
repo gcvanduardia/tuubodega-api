@@ -25,18 +25,18 @@ exports.updateTransaction = async (req, res) => {
 
     const request = new sql.Request();
 
-    sql_search = ` SELECT * FROM PaymentsTransactions WHERE IdTransaccion = '${id}'`;
+    sql_search = ` SELECT * FROM PaymentsTransactions WHERE Referencia = '${reference}'`;
     
     const result = await request.query(sql_search)
-    
-    if(result.recordset[0]){
-        sql_str = `UPDATE PaymentsTransactions
-        SET Valor = ${amount_in_cents}, Referencia = '${reference}', MetodoPago = '${payment_method_type}', Estado = '${status}', FechaCreacion = '${creationDate}', FechaEnvio = '${sendDate}'
-        WHERE IdTransaccion = '${id}';`
-    }else {
-        sql_str =  `INSERT INTO PaymentsTransactions (IdTransaccion, Valor, Referencia, Moneda, MetodoPago, Estado, FechaCreacion, FechaEnvio)
-        VALUES ('${id}', ${amount_in_cents}, '${reference}', '${currency}', '${payment_method_type}', '${status}', '${creationDate}', '${sendDate}')`;
+
+    if(result.recordset.length == 0){
+        return res.status(400).send({ Error: true, Message: 'La refencia no existe en la DB' });
     }
+
+    sql_str = `UPDATE PaymentsTransactions
+    SET IdTransaccion = '${id}', Valor = ${amount_in_cents}, Moneda = '${currency}', MetodoPago = '${payment_method_type}', Estado = '${status}', FechaCreacion = '${creationDate}', FechaEnvio = '${sendDate}'
+    WHERE Referencia = '${reference}';`
+   
 
     request.query(sql_str).then(() => {
         res.status(200).json({success:true});

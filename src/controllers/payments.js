@@ -41,9 +41,9 @@ exports.integritySignature = async (req, res) => {
 exports.recordsList = async (req, res) => {
 
     const request = new sql.Request();
-    sql_str = ` SELECT 
+    sql_str = `SELECT 
     PaymentsTransactions.*, Users.Documento, Users.Name + ' ' + Users.LastName AS NombreCompleto
-    FROM PaymentsTransactions LEFT JOIN Users ON Users.IdUser = PaymentsTransactions.IdUser ORDER BY IdTransaccion ASC`;
+    FROM PaymentsTransactions LEFT JOIN Users ON Users.IdUser = PaymentsTransactions.IdUser ORDER BY FechaCreacion ASC`;
 
     request.query(sql_str)
         .then((object) => {

@@ -43,7 +43,7 @@ exports.recordsList = async (req, res) => {
     const request = new sql.Request();
     sql_str = ` SELECT 
     PaymentsTransactions.*, Users.Documento, Users.Name + ' ' + Users.LastName AS NombreCompleto
-    FROM PaymentsTransactions LEFT JOIN Users ON Users.IdUser = PaymentsTransactions.IdUser`;
+    FROM PaymentsTransactions LEFT JOIN Users ON Users.IdUser = PaymentsTransactions.IdUser ORDER BY IdTransaccion ASC`;
 
     request.query(sql_str)
         .then((object) => {

@@ -39,18 +39,33 @@ exports.integritySignature = async (req, res) => {
 }
 
 exports.recordsList = async (req, res) => {
-
     const request = new sql.Request();
-    sql_str = `SELECT 
-    PaymentsTransactions.*, Users.Documento, Users.Name + ' ' + Users.LastName AS NombreCompleto
-    FROM PaymentsTransactions LEFT JOIN Users ON Users.IdUser = PaymentsTransactions.IdUser ORDER BY FechaCreacion ASC`;
+    const pageNumber = req.body.pageNumber || req.query.pageNumber || 1;
+    const pageSize = req.body.pageSize || req.query.pageSize || 10;
+    let sql_searchInfo = '';
+    let sql_str = '';
+
+    if (pageNumber == 1) {
+        sql_searchInfo = `
+        SELECT Resultados = COUNT(IdTransaccion), PageZise = ${pageSize}
+        FROM VistaPaymentsTransactions`;
+    }
+
+    sql_str = `
+        SELECT * FROM VistaPaymentsTransactions
+        ORDER BY FechaCreacion ASC
+        OFFSET ${pageSize} * (${pageNumber} - 1) ROWS
+        FETCH NEXT ${pageSize} ROWS ONLY;
+        
+        SELECT Resultados = COUNT(IdTransaccion), PageZise = ${pageSize}
+        FROM VistaPaymentsTransactions`;
 
     request.query(sql_str)
         .then((object) => {
-            res.status(200).json(object.recordset);
+            res.status(200).json(object.recordsets);
         })
         .catch((err) => {
-            console.log('Payments records: ',err);
+            console.log('Payments records: ', err);
             res.status(500).send({ Error: true, Message: err });
         });
 }

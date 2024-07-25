@@ -3,12 +3,13 @@ const router = express.Router();
 const cartController = require("../controllers/cart");
 const auth = require("../middleware/jwt");
 
-// router.route("/articulo/integrity-signature").get(auth,paymentsController.integritySignature);
-// router.route("/records").get(auth,paymentsController.recordsList);
-
 router
   .route("/article")
-  .post(cartController.presearch)
-  //.get(articulosController.presearch);
+  .get(auth,cartController.list)
+  .post(auth,cartController.store)
+  .put(auth,cartController.update)
+  .delete(auth,cartController.destroy);
+
+router.route("/summary").get(auth,cartController.summary)
 
 module.exports = router;

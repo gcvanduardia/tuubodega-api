@@ -33,6 +33,10 @@ const cartRouter = require('./routes/cart');
 app.use('/cart',cartRouter);
 
 
+const orderRouter = require('./routes/order');
+app.use('/order',orderRouter);
+
+
 
 const port = 3000;
 app.listen(port, () => {

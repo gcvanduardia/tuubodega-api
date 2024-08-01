@@ -127,10 +127,10 @@ exports.list = async (req, res) => {
         const request = new sql.Request();
         const idUser = req.user.IdUsuario
 
-        sql_query =  `SELECT C.Id, C.idArticulo, C.Cantidad, A.Nombre, A.Imagenes, A.PrecioUnit
+        sql_query =  `SELECT C.Id, C.IdArticulo, C.Cantidad, A.Nombre, A.ImagenPrin, A.PrecioUnit, A.Cantidad as CantidadMaxima
         FROM Carrito AS C 
-        JOIN Articulos AS A ON A.Id = C.IdArticulo
-        WHERE IdUser = ${idUser}`;
+        INNER JOIN Articulos AS A ON  C.IdArticulo = A.Id
+        WHERE C.IdUser = ${idUser}`;
 
        const data = await request.query(sql_query);
 
@@ -182,6 +182,29 @@ exports.summary = async (req, res) => {
         
     } catch (error) {
         console.log('Cart List: ',error);
+        res.status(500).send({ Error: true, Message: error });
+    }
+}
+
+exports.emptyCart = async (req, res) => {
+
+    try {
+
+        const request = new sql.Request();
+        const idUser = req.user.IdUsuario
+
+        sql_delete =  `DELETE FROM Carrito WHERE IdUser = ${idUser}`;
+
+       await request.query(sql_delete);
+
+        res.status(200).json({
+            Message:'Carrito vaciado correctamente',
+            data: true
+        });
+
+        
+    } catch (error) {
+        console.log('Cart empty: ',error);
         res.status(500).send({ Error: true, Message: error });
     }
 }

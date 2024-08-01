@@ -11,5 +11,6 @@ router
   .delete(auth,cartController.destroy);
 
 router.route("/summary").get(auth,cartController.summary)
+router.route("/empty").get(auth,cartController.emptyCart)
 
 module.exports = router;

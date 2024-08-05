@@ -36,6 +36,35 @@ exports.updateTransaction = async (req, res) => {
     sql_str = `UPDATE PaymentsTransactions
     SET IdTransaccion = '${id}', Valor = ${amount_in_cents}, Moneda = '${currency}', MetodoPago = '${payment_method_type}', Estado = '${status}', FechaCreacion = '${creationDate}', FechaEnvio = '${sendDate}'
     WHERE Referencia = '${reference}';`
+
+    if(result.recordset[0].IdOrden != null){
+
+        let estado = 1
+        switch (status) {
+            case 'PENDING':
+                estado = 1
+                break; 
+            case 'APPROVED':
+                estado = 2
+                break; 
+            case 'DECLINED':
+                estado = 3
+                break;
+            case 'VOIDED':
+                estado = 3
+                break;
+            case 'ERROR':
+                estado = 3
+                break;
+        
+            default:
+                break;
+        }
+
+        await request.query(`UPDATE Ordenes
+        SET IdOrdenEstado = ${estado}
+        WHERE Id = ${result.recordset[0].IdOrden};`)
+    }
    
 
     request.query(sql_str).then(() => {

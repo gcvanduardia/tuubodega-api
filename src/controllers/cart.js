@@ -28,8 +28,8 @@ exports.store = async (req, res) => {
             return res.status(400).send({ Error: true, Message: 'El articulo ya se encuentra en el carrito' });
         }
 
-        sql_insert =  `INSERT INTO Carrito (Cantidad, IdArticulo, IdUser)
-        VALUES (${cantidad}, ${idArticulo}, ${idUser})`;
+        sql_insert =  `INSERT INTO Carrito (Cantidad, IdArticulo, IdUser, FechaCreacion)
+        VALUES (${cantidad}, ${idArticulo}, ${idUser}, '${new Date().toISOString()}')`;
 
        await request.query(sql_insert);
 

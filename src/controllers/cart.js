@@ -208,4 +208,28 @@ exports.emptyCart = async (req, res) => {
         res.status(500).send({ Error: true, Message: error });
     }
 }
+exports.countArticlesInCart = async (req, res) => {
+
+    try {
+
+        const request = new sql.Request();
+        const idUser = req.user.IdUsuario
+
+        sql_query =  `SELECT COUNT(*) AS contador
+        FROM Carrito
+        WHERE IdUser = ${idUser}`;
+
+       const data = await request.query(sql_query);
+      
+        res.status(200).json({
+            Message:'consultado correctamente',
+            data: data.recordset[0].contador,
+        });
+
+        
+    } catch (error) {
+        console.log('Cart List: ',error);
+        res.status(500).send({ Error: true, Message: error });
+    }
+}
 

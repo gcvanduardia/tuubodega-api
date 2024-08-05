@@ -12,5 +12,6 @@ router
 
 router.route("/summary").get(auth,cartController.summary)
 router.route("/empty").get(auth,cartController.emptyCart)
+router.route("/count").get(auth,cartController.countArticlesInCart)
 
 module.exports = router;

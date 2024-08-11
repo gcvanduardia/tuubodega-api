@@ -71,7 +71,7 @@ exports.recordsList = async (req, res) => {
 }
 
 
-exports.createCotizacion = async (req, res) => {
+exports.createOrUpdateCotizacion = async (req, res) => {
     try {
         const {
             IdUsuario,
@@ -95,60 +95,87 @@ exports.createCotizacion = async (req, res) => {
 
         const request = new sql.Request();
 
-        const sql_str = `
-            INSERT INTO cotizaciones (
-                IdUsuario,
-                IdProducto,
-                Cantidad,
-                Codigo,
-                Descripcion,
-                IdCategoria,
-                IdSubCategoria1,
-                Imagenes,
-                ImagenesArray,
-                Nombre,
-                PrecioUnit,
-                DeliveryMethod,
-                PaymentMethod
-            )
-            VALUES (
-                ${IdUsuario},
-                ${IdProducto},
-                ${Cantidad},
-                '${Codigo}',
-                '${Descripcion}',
-                ${IdCategoria},
-                ${IdSubCategoria1},
-                '${Imagenes}',
-                '${ImagenesArray}',
-                '${Nombre}',
-                ${PrecioUnit},
-                ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
-                ${PaymentMethod ? `'${PaymentMethod}'` : 'NULL'}
-            )
+        const checkSql = `
+            SELECT IdCotizacion FROM cotizaciones 
+            WHERE IdUsuario = ${IdUsuario} AND IdProducto = ${IdProducto}
         `;
+        const checkResult = await request.query(checkSql);
 
-        await request.query(sql_str);
+        let IdCotizacion;
 
-        res.status(201).json({ Success: true, Message: 'Cotización creada exitosamente.' });
+        if (checkResult.recordset.length > 0) {
+            IdCotizacion = checkResult.recordset[0].IdCotizacion;
+            const updateSql = `
+                UPDATE cotizaciones
+                SET 
+                    Cantidad = ${Cantidad},
+                    Codigo = '${Codigo}',
+                    Descripcion = '${Descripcion}',
+                    IdCategoria = ${IdCategoria},
+                    IdSubCategoria1 = ${IdSubCategoria1},
+                    Imagenes = '${Imagenes}',
+                    ImagenesArray = '${ImagenesArray}',
+                    Nombre = '${Nombre}',
+                    PrecioUnit = ${PrecioUnit},
+                    DeliveryMethod = ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
+                    PaymentMethod = ${PaymentMethod ? `'${PaymentMethod}'` : 'NULL'}
+                WHERE IdCotizacion = ${IdCotizacion}
+            `;
+            await request.query(updateSql);
+        } else {
+            const insertSql = `
+                INSERT INTO cotizaciones (
+                    IdUsuario,
+                    IdProducto,
+                    Cantidad,
+                    Codigo,
+                    Descripcion,
+                    IdCategoria,
+                    IdSubCategoria1,
+                    Imagenes,
+                    ImagenesArray,
+                    Nombre,
+                    PrecioUnit,
+                    DeliveryMethod,
+                    PaymentMethod
+                )
+                OUTPUT INSERTED.IdCotizacion
+                VALUES (
+                    ${IdUsuario},
+                    ${IdProducto},
+                    ${Cantidad},
+                    '${Codigo}',
+                    '${Descripcion}',
+                    ${IdCategoria},
+                    ${IdSubCategoria1},
+                    '${Imagenes}',
+                    '${ImagenesArray}',
+                    '${Nombre}',
+                    ${PrecioUnit},
+                    ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
+                    ${PaymentMethod ? `'${PaymentMethod}'` : 'NULL'}
+                )
+            `;
+            const insertResult = await request.query(insertSql);
+            IdCotizacion = insertResult.recordset[0].IdCotizacion;
+        }
+
+        res.status(checkResult.recordset.length > 0 ? 200 : 201).json({ Success: true, Message: checkResult.recordset.length > 0 ? 'Cotización actualizada exitosamente.' : 'Cotización creada exitosamente.', IdCotizacion });
 
     } catch (error) {
-        console.log('Error creating cotizacion: ', error);
+        console.log('Error creating or updating cotizacion: ', error);
         res.status(500).send({ Error: true, Message: error });
     }
 };
 
 exports.getCotizacionById = async (req, res) => {
     try {
-        const { cod } = req.params;
-        const { IdProducto, IdUsuario } = req.query;
+        const { idCotizacion } = req.params;
         const request = new sql.Request();
 
         const sql_str = `
             SELECT * FROM cotizaciones 
-            WHERE Codigo = ${cod} 
-            AND IdProducto = ${IdProducto} 
-            AND IdUsuario = ${IdUsuario}
+            WHERE IdCotizacion = ${idCotizacion}
         `;
 
         const result = await request.query(sql_str);
@@ -165,13 +192,12 @@ exports.getCotizacionById = async (req, res) => {
     }
 };
 
-exports.updateCotizacion = async (req, res) => {
+exports.updateCotizacionMethods = async (req, res) => {
     try {
-        const { cod } = req.params;
-        const { IdProducto, IdUsuario } = req.query;
+        const { idCotizacion } = req.params;
         const { DeliveryMethod, PaymentMethod } = req.body;
-        if (!cod || !IdProducto || !IdUsuario) {
-            return res.status(400).json({ Error: true, Message: 'Los campos cod, IdProducto e IdUsuario son obligatorios.' });
+        if (!idCotizacion) {
+            return res.status(400).json({ Error: true, Message: 'El campo idCotizacion es necesario.' });
         }
         if (!DeliveryMethod && !PaymentMethod) {
             return res.status(400).json({ Error: true, Message: 'Se debe proporcionar al menos uno de los campos DeliveryMethod o PaymentMethod.' });
@@ -191,14 +217,10 @@ exports.updateCotizacion = async (req, res) => {
         const sql_str = `
             UPDATE Cotizaciones
             SET ${updateFields.join(', ')}
-            WHERE Codigo = @cod
-            AND IdProducto = @IdProducto
-            AND IdUsuario = @IdUsuario
+            WHERE IdCotizacion = @idCotizacion
         `;
 
-        request.input('cod', sql.VarChar, cod);
-        request.input('IdProducto', sql.Int, IdProducto);
-        request.input('IdUsuario', sql.Int, IdUsuario);
+        request.input('idCotizacion', sql.VarChar, idCotizacion);
 
         await request.query(sql_str);
 

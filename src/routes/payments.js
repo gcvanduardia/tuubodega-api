@@ -5,8 +5,8 @@ const auth = require("../middleware/jwt");
 
 router.route("/articulo/integrity-signature").get(auth,paymentsController.integritySignature);
 router.route("/records").get(auth,paymentsController.recordsList);
-router.route("/cotizaciones").post(auth, paymentsController.createCotizacion);
-router.route("/cotizaciones/:cod").get(auth, paymentsController.getCotizacionById);
-router.route("/cotizaciones/:cod").put(auth, paymentsController.updateCotizacion);
+router.route("/cotizaciones").post(auth, paymentsController.createOrUpdateCotizacion);
+router.route("/cotizaciones/:idCotizacion").get(auth, paymentsController.getCotizacionById);
+router.route("/cotizaciones/:idCotizacion").put(auth, paymentsController.updateCotizacionMethods);
 
 module.exports = router;

@@ -32,9 +32,11 @@ app.use('/payments',paymentsRouter);
 const cartRouter = require('./routes/cart');
 app.use('/cart',cartRouter);
 
-
 const orderRouter = require('./routes/order');
 app.use('/order',orderRouter);
+
+const registerRouter = require('./routes/register');
+app.use('/register',registerRouter);
 
 
 

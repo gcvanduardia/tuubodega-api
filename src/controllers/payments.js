@@ -231,3 +231,27 @@ exports.updateCotizacionMethods = async (req, res) => {
         res.status(500).send({ Error: true, Message: error });
     }
 };
+
+exports.getUserById = async (req, res) => {
+    try {
+        const { idCotizacion } = req.params;
+        const request = new sql.Request();
+
+        const sql_str = `
+            SELECT IdUsuario, IdProducto FROM Cotizaciones 
+            WHERE IdCotizacion = ${idCotizacion}
+        `;
+
+        const result = await request.query(sql_str);
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ Error: true, Message: 'Usuario no encontrado.' });
+        }
+
+        res.status(200).json(result.recordset[0]);
+
+    } catch (error) {
+        console.log('Error getting user: ', error);
+        res.status(500).send({ Error: true, Message: error });
+    }
+}

@@ -83,6 +83,7 @@ exports.createOrUpdateCotizacion = async (req, res) => {
             IdSubCategoria1,
             Imagenes,
             ImagenesArray,
+            ImagenPrin,
             Nombre,
             PrecioUnit,
             DeliveryMethod,
@@ -115,6 +116,7 @@ exports.createOrUpdateCotizacion = async (req, res) => {
                     IdSubCategoria1 = ${IdSubCategoria1},
                     Imagenes = '${Imagenes}',
                     ImagenesArray = '${ImagenesArray}',
+                    ImagenPrin = '${ImagenPrin}',
                     Nombre = '${Nombre}',
                     PrecioUnit = ${PrecioUnit},
                     DeliveryMethod = ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
@@ -134,6 +136,7 @@ exports.createOrUpdateCotizacion = async (req, res) => {
                     IdSubCategoria1,
                     Imagenes,
                     ImagenesArray,
+                    ImagenPrin,
                     Nombre,
                     PrecioUnit,
                     DeliveryMethod,
@@ -150,6 +153,7 @@ exports.createOrUpdateCotizacion = async (req, res) => {
                     ${IdSubCategoria1},
                     '${Imagenes}',
                     '${ImagenesArray}',
+                    '${ImagenPrin}',
                     '${Nombre}',
                     ${PrecioUnit},
                     ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
@@ -231,3 +235,59 @@ exports.updateCotizacionMethods = async (req, res) => {
         res.status(500).send({ Error: true, Message: error });
     }
 };
+
+exports.getUserById = async (req, res) => {
+    try {
+        const { idCotizacion } = req.params;
+        const request = new sql.Request();
+
+        const sql_str = `
+            SELECT IdUsuario, IdProducto FROM Cotizaciones 
+            WHERE IdCotizacion = ${idCotizacion}
+        `;
+
+        const result = await request.query(sql_str);
+
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ Error: true, Message: 'Usuario no encontrado.' });
+        }
+
+        res.status(200).json(result.recordset[0]);
+
+    } catch (error) {
+        console.log('Error getting user: ', error);
+        res.status(500).send({ Error: true, Message: error });
+    }
+}
+
+
+exports.buyNowOrden = async (req, res) => {
+
+    try {
+        const id = req.params.id;
+        const request = new sql.Request();
+        sql_str = ` SELECT * FROM Ordenes WHERE Id = ${id}`;
+
+        const result = await request.query(sql_str);
+        
+        const reference = generateReference(16);
+
+        const product = result.recordset[0]
+        const monto = (Math.round(product.Valor)) * 100 
+        const cadena = reference + monto + 'COP'
+        const integritySignature = generateIntegritySignature(cadena);
+
+        res.status(200).json({
+            publicKey:process.env.WOMPI_PUBLIC_KEY,
+            currency: 'COP',
+            amountInCents: monto,
+            reference: reference,
+            integritySignature: integritySignature
+        });
+
+    } catch (error) {
+        console.log('Payments records: ',error);
+        res.status(500).send({ Error: true, Message: error });
+    }
+}
+

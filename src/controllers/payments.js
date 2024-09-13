@@ -72,94 +72,128 @@ exports.recordsList = async (req, res) => {
 
 
 exports.createOrUpdateCotizacion = async (req, res) => {
+
     try {
         const {
+            Descripcion,
             IdUsuario,
             IdProducto,
-            Cantidad,
-            Codigo,
-            Descripcion,
             IdCategoria,
-            IdSubCategoria1,
-            Imagenes,
-            ImagenesArray,
-            ImagenPrin,
+            Marca,
+            Modelo,
+            SKU,
+            Stock,
             Nombre,
-            PrecioUnit,
+            UrlFotos,
+            Usr,
             DeliveryMethod,
-            PaymentMethod
+            PaymentMethod,
+            ValorUnt
         } = req.body;
 
-        if (!IdUsuario || !IdProducto || !Cantidad || !Codigo || !Descripcion || !IdCategoria || !IdSubCategoria1 || !Imagenes || !ImagenesArray || !Nombre || !PrecioUnit) {
+
+        if (!IdUsuario || !IdProducto || !Marca || !Modelo || !Descripcion || !IdCategoria || !SKU || !Stock || !UrlFotos || !Nombre || !Usr || !ValorUnt) {
             return res.status(400).json({ Error: true, Message: 'Todos los campos obligatorios deben ser proporcionados.' });
         }
 
-        const request = new sql.Request();
+        // Crear una nueva instancia de sql.Request para cada consulta
+        let request = new sql.Request();
 
         const checkSql = `
             SELECT IdCotizacion FROM cotizaciones 
-            WHERE IdUsuario = ${IdUsuario} AND IdProducto = ${IdProducto}
+            WHERE IdUsuario = @IdUsuario AND IdProducto = @IdProducto
         `;
+        request.input('IdUsuario', sql.Int, IdUsuario);
+        request.input('IdProducto', sql.Int, IdProducto);
         const checkResult = await request.query(checkSql);
 
         let IdCotizacion;
 
         if (checkResult.recordset.length > 0) {
             IdCotizacion = checkResult.recordset[0].IdCotizacion;
+            request = new sql.Request(); // Nueva instancia de sql.Request
             const updateSql = `
                 UPDATE cotizaciones
                 SET 
-                    Cantidad = ${Cantidad},
-                    Codigo = '${Codigo}',
-                    Descripcion = '${Descripcion}',
-                    IdCategoria = ${IdCategoria},
-                    IdSubCategoria1 = ${IdSubCategoria1},
-                    Imagenes = '${Imagenes}',
-                    ImagenesArray = '${ImagenesArray}',
-                    ImagenPrin = '${ImagenPrin}',
-                    Nombre = '${Nombre}',
-                    PrecioUnit = ${PrecioUnit},
-                    DeliveryMethod = ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
-                    PaymentMethod = ${PaymentMethod ? `'${PaymentMethod}'` : 'NULL'}
-                WHERE IdCotizacion = ${IdCotizacion}
+                    Stock = @Stock,
+                    Marca = @Marca,
+                    Descripcion = @Descripcion,
+                    IdCategoria = @IdCategoria,
+                    Modelo = @Modelo,
+                    UrlFotos = @UrlFotos,
+                    Usr = @Usr,
+                    Nombre = @Nombre,
+                    SKU = @SKU,
+                    DeliveryMethod = @DeliveryMethod,
+                    PaymentMethod = @PaymentMethod,
+                    ValorUnt = @ValorUnt
+                WHERE IdCotizacion = @IdCotizacion
             `;
+            request.input('Stock', sql.Int, Stock);
+            request.input('Marca', sql.VarChar, Marca);
+            request.input('Descripcion', sql.VarChar, Descripcion);
+            request.input('IdCategoria', sql.Int, IdCategoria);
+            request.input('Modelo', sql.VarChar, Modelo);
+            request.input('UrlFotos', sql.VarChar, UrlFotos);
+            request.input('Usr', sql.VarChar, Usr);
+            request.input('Nombre', sql.VarChar, Nombre);
+            request.input('SKU', sql.VarChar, SKU);
+            request.input('DeliveryMethod', sql.VarChar, DeliveryMethod || null);
+            request.input('PaymentMethod', sql.VarChar, PaymentMethod || null);
+            request.input('ValorUnt', sql.Int, ValorUnt);
+            request.input('IdCotizacion', sql.Int, IdCotizacion);
             await request.query(updateSql);
         } else {
+            request = new sql.Request(); // Nueva instancia de sql.Request
             const insertSql = `
                 INSERT INTO cotizaciones (
+                    Descripcion,
                     IdUsuario,
                     IdProducto,
-                    Cantidad,
-                    Codigo,
-                    Descripcion,
                     IdCategoria,
-                    IdSubCategoria1,
-                    Imagenes,
-                    ImagenesArray,
-                    ImagenPrin,
+                    Marca,
+                    Modelo,
+                    SKU,
+                    Stock,
                     Nombre,
-                    PrecioUnit,
+                    UrlFotos,
+                    Usr,
                     DeliveryMethod,
-                    PaymentMethod
+                    PaymentMethod,
+                    ValorUnt
                 )
                 OUTPUT INSERTED.IdCotizacion
                 VALUES (
-                    ${IdUsuario},
-                    ${IdProducto},
-                    ${Cantidad},
-                    '${Codigo}',
-                    '${Descripcion}',
-                    ${IdCategoria},
-                    ${IdSubCategoria1},
-                    '${Imagenes}',
-                    '${ImagenesArray}',
-                    '${ImagenPrin}',
-                    '${Nombre}',
-                    ${PrecioUnit},
-                    ${DeliveryMethod ? `'${DeliveryMethod}'` : 'NULL'},
-                    ${PaymentMethod ? `'${PaymentMethod}'` : 'NULL'}
+                    @Descripcion,
+                    @IdUsuario,
+                    @IdProducto,
+                    @IdCategoria,
+                    @Marca,
+                    @Modelo,
+                    @SKU,
+                    @Stock,
+                    @Nombre,
+                    @UrlFotos,
+                    @Usr,
+                    @DeliveryMethod,
+                    @PaymentMethod,
+                    @ValorUnt
                 )
             `;
+            request.input('Descripcion', sql.VarChar, Descripcion);
+            request.input('IdUsuario', sql.Int, IdUsuario);
+            request.input('IdProducto', sql.Int, IdProducto);
+            request.input('IdCategoria', sql.Int, IdCategoria);
+            request.input('Marca', sql.VarChar, Marca);
+            request.input('Modelo', sql.VarChar, Modelo);
+            request.input('SKU', sql.VarChar, SKU);
+            request.input('Stock', sql.Int, Stock);
+            request.input('Nombre', sql.VarChar, Nombre);
+            request.input('UrlFotos', sql.VarChar, UrlFotos);
+            request.input('Usr', sql.VarChar, Usr);
+            request.input('DeliveryMethod', sql.VarChar, DeliveryMethod || null);
+            request.input('PaymentMethod', sql.VarChar, PaymentMethod || null);
+            request.input('ValorUnt', sql.Int, ValorUnt);
             const insertResult = await request.query(insertSql);
             IdCotizacion = insertResult.recordset[0].IdCotizacion;
         }

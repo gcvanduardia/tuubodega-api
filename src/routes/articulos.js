@@ -25,4 +25,15 @@ router
   .post(articulosController.article)
   .get(articulosController.article);
 
+router
+  .route("/all-denario-products")
+  .get(articulosController.allDenarioProducts);
+
+
+  router
+  .route("/getDenarioArticle/:id")
+  .get(articulosController.getArticle);
+
+module.exports = router;
+
 module.exports = router;

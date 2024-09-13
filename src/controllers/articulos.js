@@ -1,4 +1,5 @@
 const sql = require("mssql");
+const axios = require('axios');
 
 exports.searchAdmin = async (req, res) => {
     const search = req.body.search || req.query.search;
@@ -247,4 +248,37 @@ exports.article = async (req, res) => {
             console.log('Articulos article: ',err);
             res.status(500).send({ Error: true, Message: err });
         });
+}
+
+exports.getArticle = async (req, res) => {
+    const id = req.params.id;
+    try {
+        const headers = {
+            'Authorization': 'AutGmovilDenario2021'
+        };
+        const response = await axios.get(`https://api-den.tuubodega.com/api/tuuBodega/premios/${id}`, { headers });
+
+        const productos = response.data.body;
+        res.status(200).json(productos);
+    } catch (error) {
+        console.error('Error al llamar al servicio de la otra API:', error);
+        res.status(500).send({ error: 'Error al obtener el producto por Id' });
+    }
+
+}
+
+exports.allDenarioProducts = async (req, res) => {
+    try {
+        const headers = {
+            'Authorization': 'AutGmovilDenario2021'
+        };
+        const response = await axios.get('https://api-den.tuubodega.com/api/tuuBodega/premios', { headers });
+
+        const productos = response.data.body;
+        console.log('Productos:', response);
+        res.status(200).json(productos);
+    } catch (error) {
+        console.error('Error al llamar al servicio de la otra API:', error);
+        res.status(500).send({ error: 'Error al obtener los productos' });
+    }
 }

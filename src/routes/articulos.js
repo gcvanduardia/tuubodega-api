@@ -30,9 +30,19 @@ router
   .get(articulosController.allDenarioProducts);
 
 
-  router
+router
   .route("/getDenarioArticle/:id")
   .get(articulosController.getArticle);
+
+router
+  .route("/searchDenario")
+  .post(articulosController.searchDenario)
+  .get(articulosController.searchDenario);
+
+router
+  .route("/presearchDenario")
+  .post(auth,articulosController.presearchDenario)
+  .get(auth,articulosController.presearchDenario);
 
 module.exports = router;
 

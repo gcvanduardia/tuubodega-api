@@ -282,3 +282,74 @@ exports.allDenarioProducts = async (req, res) => {
         res.status(500).send({ error: 'Error al obtener los productos' });
     }
 }
+
+exports.searchDenario = async (req, res) => {
+    const search = req.body.search || req.query.search || '';
+    const pageNumber = req.body.pageNumber || req.query.pageNumber || 1;
+    const pageSize = req.body.pageSize || req.query.pageSize || 12;
+    const order = req.body.order || req.query.order || 'masRelevante';
+    const categories = req.body.categories || req.query.categories;
+    
+    const searchParams = {
+        
+        search,  // Palabra clave de búsqueda
+        pageNumber,         // Número de página
+        pageSize,          // Tamaño de página
+        order, // Orden
+        categories
+      };
+      
+      try {
+        const response = await axios.get('https://api-den.tuubodega.com/api/tuuBodega/premios/search', {
+            params: searchParams,
+            headers: {
+                'Authorization': 'AutGmovilDenario2021',
+            }
+        });
+        const result = response.data;
+        result[0].forEach((item) => {
+            if (item.UrlFotos) {
+                item.UrlFotos = item.UrlFotos.split('Merka_SSTEC');  // Procesa UrlFotos
+            }
+        });
+
+        console.log('Productos:', result);
+
+        // Retornar la respuesta de la API externa al cliente
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send({ error: 'Error al obtener los productos' });
+    }
+}
+
+exports.presearchDenario = async (req, res) => {
+    const search = req.body.search || req.query.search || '';
+    const pageNumber = req.body.pageNumber || req.query.pageNumber || 1;
+    const pageSize = req.body.pageSize || req.query.pageSize || 12;
+    const order = req.body.order || req.query.order || 'masRelevante';
+    
+    const searchParams = {
+        
+        search,  // Palabra clave de búsqueda
+        pageNumber,         // Número de página
+        pageSize,          // Tamaño de página
+        order, // Orden
+        // categories: '1,2,3'    // IDs de categorías
+      };
+      
+      try {
+        const response = await axios.get('https://api-den.tuubodega.com/api/tuuBodega/premios/presearch', {
+            params: searchParams,
+            headers: {
+                'Authorization': 'AutGmovilDenario2021',
+            }
+        });
+
+        // Retornar la respuesta de la API externa al cliente
+        res.status(200).json(response.data);
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).send({ error: 'Error al obtener los productos' });
+    }
+}

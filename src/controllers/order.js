@@ -1,4 +1,5 @@
 const sql = require("mssql");
+const axios = require('axios');
 const { generateIntegritySignature, generateReference } = require('../services/wompi');
 
 exports.store = async (req, res) => {
@@ -189,45 +190,58 @@ exports.getProductByOrdenId = async (req, res) => {
 
 exports.createCotizacion = async (req, res) => {
     try {
-        const idUser = req.params.idUser
+        const idUser = req.params.idUser;
         const request = new sql.Request();
 
-        //Se consulta los articulos que el usuario tiene en el carrito
-        sql_query =  `SELECT C.Id, C.IdArticulo, C.Cantidad, A.PrecioUnit
-        FROM Carrito AS C 
-        INNER JOIN Articulos AS A ON  C.IdArticulo = A.Id
-        WHERE C.IdUser = ${idUser}`;
+        // Paso 1: Obtener los artículos del carrito
+        const sql_query = `SELECT C.Id, C.IdArticulo, C.Cantidad
+                           FROM Carrito AS C
+                           WHERE C.IdUser = ${idUser}`;
 
-       const articulos = await request.query(sql_query);
+        const carritoData = await request.query(sql_query);
 
-       if(articulos.recordset.length == 0){
-            res.status(500).send({ Error: true, Message: 'No tiene productos en el carrito' });
-       }
+        if (carritoData.recordset.length === 0) {
+            return res.status(500).send({ Error: true, Message: 'No tiene productos en el carrito' });
+        }
 
-       // Se hace el inser en la tabla CotizacionesCarrito con los datos basicos
-       sql_orden =  `INSERT INTO CotizacionesCarrito (IdUser, FechaCreacion)
-        OUTPUT INSERTED.Id
-        VALUES (${req.user.IdUsuario}, '${new Date().toISOString()}' )`;
+        // Paso 2: Obtener los detalles de los artículos desde la otra API
+        const headers = {
+            'Authorization': 'AutGmovilDenario2021'
+        };
 
-       const orden =  await request.query(sql_orden);
-       const idOrden = orden.recordset[0].Id
-       console.log('idOrden: ',idOrden);
-       for (const key in articulos.recordset) {
-            const item = articulos.recordset[key];
+        const articleDetailsPromises = carritoData.recordset.map(async (item) => {
+            const response = await axios.get(`https://api-den.tuubodega.com/api/tuuBodega/premios/${item.IdArticulo}`, { headers });
+            return {
+                ...item,
+                ...response.data.body
+            };
+        });
 
+        const articlesDetails = await Promise.all(articleDetailsPromises);
+
+        // Paso 3: Insertar los datos en la tabla CotizacionesCarrito
+        const sql_orden = `INSERT INTO CotizacionesCarrito (IdUser, FechaCreacion)
+                           OUTPUT INSERTED.Id
+                           VALUES (${req.user.IdUsuario}, '${new Date().toISOString()}' )`;
+
+        const orden = await request.query(sql_orden);
+        const idOrden = orden.recordset[0].Id;
+        console.log('idOrden: ', idOrden);
+
+        // Paso 4: Insertar los detalles de los artículos en la tabla DetallesCotizacionesCarrito
+        for (const item of articlesDetails) {
             await request.query(`INSERT INTO DetallesCotizacionesCarrito (IdArticulo, IdOrdenCarrito, Cantidad)
-            VALUES ( ${item.IdArticulo}, ${idOrden}, ${item.Cantidad} )`);
-       }
+                                 VALUES (${item.IdArticulo}, ${idOrden}, ${item.Cantidad})`);
+        }
 
         res.status(200).json({
             currency: 'COP',
             idOrden: parseInt(idOrden)
         });
-        console.log('IdOrden: ',idOrden);
+        console.log('IdOrden: ', idOrden);
 
-        
     } catch (error) {
-        console.log('Cotizacion Error: ',error);
+        console.log('Cotizacion Error: ', error);
         res.status(500).send({ Error: true, Message: error });
     }
-}
+};
